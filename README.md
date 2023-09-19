@@ -68,6 +68,110 @@ yarn ticket_sidebar:start
 !! Use any other application names instead of `ticket_sidebar` !!
 By default this will execute `yarn dev` script in `ticket_sidebar` folder, where your framework rests.
 
+### Change dev ports
+
+There might be a case where your framework package runs on a non-standard port, i.e. - http://localhost:`3005`
+If so, you can specify dev port for your local development for each application (package) separately.
+This will allow you to run multiple packages and they will be correctly reflected in `manifest.json` file.
+To do so:
+- head over to `packages/zendesk`
+- you can add `dev:port` and `dev:url` to any application listed in the `support` listed
+For example, given the following list:
+```
+"support": {
+	"ticket_sidebar": {
+		"url": "assets/ticket_sidebar/index.html",
+		"size": {
+			"height": "500px",
+			"width": "340px"
+		},
+		"flexible": true
+	},
+	"nav_bar": {
+		"url": "assets/nav_bar/index.html",
+		"size": {
+			"height": "500px",
+			"width": "340px"
+		},
+		"flexible": true
+	}
+}
+```
+
+You can specify different URL and Port for each app like so:
+
+```
+"support": {
+	"ticket_sidebar": {
+		"url": "assets/ticket_sidebar/index.html",
+		"size": {
+			"height": "500px",
+			"width": "340px"
+		},
+		"flexible": true,
+		"dev:url": "localhost",
+		"dev:port": 3500,
+
+	},
+	"nav_bar": {
+		"url": "assets/nav_bar/index.html",
+		"size": {
+			"height": "500px",
+			"width": "340px"
+		},
+		"flexible": true,
+		"dev:url": "localhost",
+		"dev:port": 4000,
+	}
+}
+
+```
+
+This will ensure in the manifest file generated like so:
+
+```
+"support": {
+	"ticket_sidebar": {
+		"url": "http://localhost:3500",
+		"size": {
+			"height": "500px",
+			"width": "340px"
+		},
+		"flexible": true,
+	},
+	"nav_bar": {
+		"url": "http://localhost:4000",
+		"size": {
+			"height": "500px",
+			"width": "340px"
+		},
+		"flexible": true,
+	}
+}
+
+```
+
+When starting the dev server for your package, vite will select a random available port. This port could be different to the port added inside the `manifest.json`. To ensure the package is served over the correct port, add the `server.port` configuration to the `vite.config.js` file (inside the package folder):
+
+```javascript
+export default defineConfig({
+  plugins: [
+    ...
+	...
+    injectZafHtmlPlugin(),
+  ],
+  ...
+  ...
+  ...
+  server: {
+    port: 3000,
+  },
+})
+```
+
+NOTICE: properties `dev:port` and `dev:url` are automatically removed by boilerplate, as those are non-production properties of `manifest.json`, so they are cleaned up.
+
+
 ## Build for production
 
 1. Inside your project directory use build script from `package.json` file
@@ -105,7 +209,7 @@ Let's create a new `top_bar` application, that will use `Vue` js.
 
 ```
 cd packages
-yarn vite create
+yarn create vite
 ```
 
 - Where you can choose any framework of your liking, but for the sake of the example we agreed to go with Vue.
@@ -125,6 +229,13 @@ cd top_bar
 
 ```ts
 import { injectZafHtmlPlugin } from "@app/zendesk/vite-plugin-inject-zaf-html";
+```
+
+Some front-end frameworks (Vue.js, Svelte, etc) may require a different apporach to importing the plugin:
+
+```ts
+import * as pluginPkg from '@app/zendesk/vite-plugin-inject-zaf-html/index.js'
+const { injectZafHtmlPlugin } = pluginPkg.default
 ```
 
 6. Add this plugin into your `plugins` dependency array like so:
@@ -158,6 +269,45 @@ export default defineConfig({
 9. That's it, you are ready to run / build your project.
    In boilerplate project folder run those scripts in separate terminals
    `yarn zcli:start` and `yarn top_bar:start` (if you have not created the script `top_bar:start`, you can manually navigate into a `top_bar` folder and start the server from there `yarn dev`
+
+If your application package uses parameters, you could add these to a `zcli.apps.config.json` file. This will allow you to run the app without having to manually enter the parameters with each restart. Read more about Zendesk App Framework parameters [here](https://developer.zendesk.com/documentation/apps/app-developer-guide/setup/#defining-installation-settings).
+
+10. Create a new file named `zcli.apps.config.json` inside the `/packages/zendesk` folder, and add the parameters:
+
+```json
+{
+  "parameters": {
+    "apiUrl": "http://api.my-domain-here.com",
+    "apiUser": "agent.smith@example.com",
+    "apiPassword": "MySuperSecretPwd123$%^"
+  }
+}
+```
+
+11. Add the parameters to the `manifest.json` file inside the `/packages/zendesk` folder:
+
+```json
+"parameters": [
+    {
+      "name": "apiUrl",
+      "type": "text",
+      "secure": false,
+      "required": true
+    },
+    {
+      "name": "apiUser",
+      "type": "text",
+      "secure": false,
+      "required": true
+    },
+    {
+      "name": "apiPassword",
+      "type": "password",
+      "secure": true,
+      "required": true
+    }
+  ]
+```
 
 # Structure
 
